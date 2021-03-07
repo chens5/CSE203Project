@@ -47,7 +47,7 @@ def dev_eval(dev_dataloader, model, loss_fn):
         for idx, (feature_batch, label_batch) in enumerate(dev_dataloader):
             pred_batch = loss_fn(feature_batch)
             loss = loss_fn(pred_batch, label_batch)
-            dev_loss_total += loss
+            dev_loss_total += loss.item()
             dev_instances += feature_batch.size(0)
     end_time = time.time()
     print(f'Avg. dev loss over {dev_instances} instances: {dev_loss_total / dev_instances}, no_grad_elapsed_seconds: {start_time - end_time}')
