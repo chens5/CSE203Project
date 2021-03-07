@@ -19,7 +19,7 @@ def build_dataloaders(features_path, labels_path, dev_percent=0.2):
     dev_tensors = [features[n_train:], labels[n_train:]]
 
     train_dataset = torch.utils.data.TensorDataset(*train_tensors)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=0)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=0)
 
     dev_dataset = torch.utils.data.TensorDataset(*dev_tensors)
     dev_dataloader = torch.utils.data.DataLoader(dev_dataset, batch_size=1, shuffle=False, num_workers=0)
@@ -41,8 +41,11 @@ def main():
     labels_path = 'sudoku/data/2/labels.pt'
 
     _, train_dataloader, _, dev_dataloader = build_dataloaders(features_path, labels_path)
-    board_size = 4
-    model = OptNet(1, board_size, 4**3, 40, q_penalty=0.1)
+    board_size = 4 # data/2 subfolder is 4x4 grids, data/3 subfolder is 9x9 grids
+
+    # can replace the following with whatever other model you have (imported above)
+    # all of them i think use the same loss function anyway
+    model = OptNet(1, board_size, batch_sizeg**3, 40, q_penalty=0.1)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn = torch.nn.MSELoss()
 
