@@ -79,8 +79,12 @@ class OptNetLayer(nn.Module):
             # this means z_prev is a batch, so we have to repeat the params across batch
             nbatch = z_prev.size(0)
             if nbatch == 1:
-                z_flat = -z_prev.squeeze(0).view(-1)
-                return self.layer(self.Q_sqrt, z_flat, self.A, self.b, self.G, self.h, solver_args={'verbose': verbose})[0].view_as(z_prev).unsqueeze(0)
+                # if batch size set to 1 and using batched data loader we can avoid
+                # vacuously repeating the weights across batch 1 and just squeeze out the
+                # batch dim then unsqueeze after processing result
+                z_prev_squeeze = z_prev.squeeze(0)
+                z_flat = -z_prev_squeeze.view(-1)
+                return self.layer(self.Q_sqrt, z_flat, self.A, self.b, self.G, self.h, solver_args={'verbose': verbose})[0].view_as(z_prev_squeeze).unsqueeze(0)
 
             # not clear yet why negative here, this is from the example code
             z_flat = -z_prev.view(nbatch, -1)
