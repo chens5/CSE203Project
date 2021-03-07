@@ -5,7 +5,7 @@ from models.optnet_cvxpylayers import OptNet
 torch.manual_seed(309)
 np.random.seed(484)
 
-def build_dataloaders(features_path, labels_path, dev_percent=0.2):
+def build_dataloaders(features_path, labels_path, train_batch_size=4, dev_percent=0.1):
     with open(features_path, 'rb') as fp:
         features = torch.load(fp).double()
     with open(labels_path, 'rb') as fp:
@@ -19,7 +19,7 @@ def build_dataloaders(features_path, labels_path, dev_percent=0.2):
     dev_tensors = [features[n_train:], labels[n_train:]]
 
     train_dataset = torch.utils.data.TensorDataset(*train_tensors)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=0)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True, num_workers=0)
 
     dev_dataset = torch.utils.data.TensorDataset(*dev_tensors)
     dev_dataloader = torch.utils.data.DataLoader(dev_dataset, batch_size=1, shuffle=False, num_workers=0)
@@ -40,12 +40,12 @@ def main():
     features_path = 'sudoku/data/2/features.pt'
     labels_path = 'sudoku/data/2/labels.pt'
 
-    _, train_dataloader, _, dev_dataloader = build_dataloaders(features_path, labels_path)
+    _, train_dataloader, _, dev_dataloader = build_dataloaders(features_path, labels_path, train_batch_size=4)
     board_size = 4 # data/2 subfolder is 4x4 grids, data/3 subfolder is 9x9 grids
 
     # can replace the following with whatever other model you have (imported above)
     # all of them i think use the same loss function anyway
-    model = OptNet(1, board_size, batch_sizeg**3, 40, q_penalty=0.1)
+    model = OptNet(1, board_size, board_size**3, 40, q_penalty=0.1)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn = torch.nn.MSELoss()
 
