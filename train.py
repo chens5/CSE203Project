@@ -30,7 +30,7 @@ def train_epoch(train_dataloader, model, optimizer, loss_fn):
     for idx, (feature_batch, label_batch) in enumerate(train_dataloader):
         pred_batch = model(feature_batch)
         loss = loss_fn(pred_batch, label_batch)
-        print(f'Batch {idx}, loss: {loss.data[0]}')
+        print(f'Batch {idx}, loss: {loss.item()}')
 
         optimizer.zero_grad()
         loss.backward()
@@ -38,7 +38,7 @@ def train_epoch(train_dataloader, model, optimizer, loss_fn):
 
 def main():
     board_size = 9 # data/2 subfolder is 4x4 grids, data/3 subfolder is 9x9 grids
-    
+
     if board_size == 9:
         features_path = 'sudoku/data/3/features.pt'
         labels_path = 'sudoku/data/3/labels.pt'

@@ -84,7 +84,8 @@ class OptNetLayer(nn.Module):
                 # batch dim then unsqueeze after processing result
                 z_prev_squeeze = z_prev.squeeze(0)
                 z_flat = -z_prev_squeeze.view(-1)
-                return self.layer(self.Q_sqrt, z_flat, self.A, self.b, self.G, self.h, solver_args={'verbose': verbose})[0].view_as(z_prev_squeeze).unsqueeze(0)
+                out = self.layer(self.Q_sqrt, z_flat, self.A, self.b, self.G, self.h, solver_args={'verbose': verbose})
+                return out[0].view_as(z_prev_squeeze).unsqueeze(0)
 
             # not clear yet why negative here, this is from the example code
             z_flat = -z_prev.view(nbatch, -1)
