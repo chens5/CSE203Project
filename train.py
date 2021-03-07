@@ -45,7 +45,7 @@ def dev_eval(dev_dataloader, model, loss_fn):
     start_time = time.time()
     with torch.no_grad():
         for idx, (feature_batch, label_batch) in enumerate(dev_dataloader):
-            pred_batch = loss_fn(feature_batch)
+            pred_batch = model(feature_batch)
             loss = loss_fn(pred_batch, label_batch)
             dev_loss_total += loss.item()
             dev_instances += feature_batch.size(0)
