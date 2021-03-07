@@ -89,13 +89,14 @@ class OptNetLayer(nn.Module):
 
             # not clear yet why negative here, this is from the example code
             z_flat = -z_prev.view(nbatch, -1)
-            return self.layer(self.Q_sqrt.repeat(nbatch, 1, 1),
+            out = self.layer(self.Q_sqrt.repeat(nbatch, 1, 1),
                               z_flat,
                               self.A.repeat(nbatch, 1, 1),
                               self.b.repeat(nbatch, 1),
                               self.G.repeat(nbatch, 1, 1),
                               self.h.repeat(nbatch, 1),
-                              solver_args={'verbose': verbose})[0].view_as(z_prev)
+                              solver_args={'verbose': verbose})
+            return out[0].view_as(z_prev)
         elif z_prev.ndim == 3:
             # z_prev is not batched
             # not clear yet why negative here, this is from the example code
