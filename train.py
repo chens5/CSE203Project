@@ -37,11 +37,18 @@ def train_epoch(train_dataloader, model, optimizer, loss_fn):
         optimizer.step()
 
 def main():
-    features_path = 'sudoku/data/2/features.pt'
-    labels_path = 'sudoku/data/2/labels.pt'
+    board_size = 9 # data/2 subfolder is 4x4 grids, data/3 subfolder is 9x9 grids
+    
+    if board_size == 9:
+        features_path = 'sudoku/data/3/features.pt'
+        labels_path = 'sudoku/data/3/labels.pt'
+    elif board_size == 4:
+        features_path = 'sudoku/data/2/features.pt'
+        labels_path = 'sudoku/data/2/labels.pt'
+    else:
+        raise Exception('Invalid board_size, must be 4 or 9')
 
-    _, train_dataloader, _, dev_dataloader = build_dataloaders(features_path, labels_path, train_batch_size=4)
-    board_size = 4 # data/2 subfolder is 4x4 grids, data/3 subfolder is 9x9 grids
+    _, train_dataloader, _, dev_dataloader = build_dataloaders(features_path, labels_path, train_batch_size=1)
 
     # can replace the following with whatever other model you have (imported above)
     # all of them i think use the same loss function anyway
