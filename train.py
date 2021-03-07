@@ -33,7 +33,7 @@ def train_epoch(train_dataloader, model, optimizer, loss_fn):
         pred_batch = model(feature_batch)
         loss = loss_fn(pred_batch, label_batch)
         end_time = time.time()
-        print(f'Batch {idx}/{len(train_dataloader)}, loss: {loss.item()}, batch_time_seconds: {end_time - start_time}')
+        print(f'Batch {idx}/{len(train_dataloader)}, loss: {loss.item()}, batch_time_seconds: {end_time - start_time}', flush=True)
 
         optimizer.zero_grad()
         loss.backward()
@@ -50,7 +50,7 @@ def dev_eval(dev_dataloader, model, loss_fn):
             dev_loss_total += loss.item()
             dev_instances += feature_batch.size(0)
     end_time = time.time()
-    print(f'Avg. dev loss over {dev_instances} instances: {dev_loss_total / dev_instances}, no_grad_elapsed_seconds: {start_time - end_time}')
+    print(f'Avg. dev loss over {dev_instances} instances: {dev_loss_total / dev_instances}, no_grad_elapsed_seconds: {start_time - end_time}', flush=True)
 
 def main():
     board_size = 9 # data/2 subfolder is 4x4 grids, data/3 subfolder is 9x9 grids
@@ -75,11 +75,11 @@ def main():
 
     n_epochs = 5
     for epoch_iter in range(n_epochs):
-        print(f'Starting Epoch {epoch_iter+1}/{n_epochs}')
+        print(f'Starting Epoch {epoch_iter+1}/{n_epochs}', flush=True)
         start_time = time.time()
         train_epoch(train_dataloader, model, optimizer, loss_fn)
         end_time = time.time()
-        print(f'Finished Epoch {epoch_iter+1} in {start_time-end_time} seconds')
+        print(f'Finished Epoch {epoch_iter+1} in {start_time-end_time} seconds', flush=True)
 
         dev_eval(dev_dataloader, model, loss_fn)
 
