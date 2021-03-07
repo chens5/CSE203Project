@@ -1,4 +1,5 @@
 import torch
+import time
 import numpy as np
 from models.optnet_cvxpylayers import OptNet
 
@@ -28,16 +29,32 @@ def build_dataloaders(features_path, labels_path, train_batch_size=4, dev_percen
 
 def train_epoch(train_dataloader, model, optimizer, loss_fn):
     for idx, (feature_batch, label_batch) in enumerate(train_dataloader):
+        start_time = time.time()
         pred_batch = model(feature_batch)
         loss = loss_fn(pred_batch, label_batch)
-        print(f'Batch {idx}, loss: {loss.item()}')
+        end_time = time.time()
+        print(f'Batch {idx}, loss: {loss.item()}, batch_time_seconds: {end_time - start_time}')
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
+def dev_eval(dev_dataloader, model, loss_fn):
+    dev_loss_total = 0.0
+    dev_instances = 0
+    start_time = time.time()
+    with torch.no_grad():
+        for idx, (feature_batch, label_batch) in enumerate(dev_dataloader):
+            pred_batch = loss_fn(feature_batch)
+            loss = loss_fn(pred_batch, label_batch)
+            dev_loss_total += loss
+            dev_instances += feature_batch.size(0)
+    end_time = time.time()
+    print(f'Avg. dev loss over {dev_instances} instances: {dev_loss_total / dev_instances}, no_grad_elapsed_seconds: {start_time - end_time}')
+
 def main():
     board_size = 9 # data/2 subfolder is 4x4 grids, data/3 subfolder is 9x9 grids
+    train_batch_size = 4
 
     if board_size == 9:
         features_path = 'sudoku/data/3/features.pt'
@@ -48,7 +65,7 @@ def main():
     else:
         raise Exception('Invalid board_size, must be 4 or 9')
 
-    _, train_dataloader, _, dev_dataloader = build_dataloaders(features_path, labels_path, train_batch_size=1)
+    _, train_dataloader, _, dev_dataloader = build_dataloaders(features_path, labels_path, train_batch_size=train_batch_size)
 
     # can replace the following with whatever other model you have (imported above)
     # all of them i think use the same loss function anyway
@@ -59,8 +76,12 @@ def main():
     n_epochs = 5
     for epoch_iter in range(n_epochs):
         print(f'Starting Epoch {epoch_iter+1}/{n_epochs}')
+        start_time = time.time()
         train_epoch(train_dataloader, model, optimizer, loss_fn)
+        end_time = time.time()
+        print(f'Finished Epoch {epoch_iter+1} in {start_time-end_time} seconds')
 
+        dev_eval(dev_dataloader, model, loss_fn)
 
 if __name__=='__main__':
   main();
