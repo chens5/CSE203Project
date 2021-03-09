@@ -16,8 +16,13 @@ def build_dataloaders(features_path, labels_path, train_batch_size=4, dev_percen
     n_train = int(n_instances*(1.-dev_percent))
     n_test = n_instances-n_train
 
-    train_tensors = [features[:n_train], labels[:n_train]]
-    dev_tensors = [features[n_train:], labels[n_train:]]
+    # dataset is small so move all to cuda up front
+    if torch.cuda.is_available():
+        train_tensors = [features[:n_train].to('cuda'), labels[:n_train].to('cuda')]
+        dev_tensors = [features[n_train:].to('cuda'), labels[n_train:].to('cuda')]
+    else:
+        train_tensors = [features[:n_train], labels[:n_train]]
+        dev_tensors = [features[n_train:], labels[n_train:]]
 
     train_dataset = torch.utils.data.TensorDataset(*train_tensors)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True, num_workers=0)
@@ -30,9 +35,10 @@ def build_dataloaders(features_path, labels_path, train_batch_size=4, dev_percen
 def train_epoch(train_dataloader, model, optimizer, loss_fn, is_cuda):
     for idx, (feature_batch, label_batch) in enumerate(train_dataloader):
         start_time = time.time()
-        if is_cuda:
-            feature_batch = feature_batch.to('cuda')
-            label_batch = label_batch.to('cuda')
+        # only needed if full dataset not loaded to gpu at once
+        # if is_cuda:
+        #     feature_batch = feature_batch.to('cuda')
+        #     label_batch = label_batch.to('cuda')
 
         pred_batch = model(feature_batch)
         loss = loss_fn(pred_batch, label_batch)
@@ -50,9 +56,10 @@ def dev_eval(dev_dataloader, model, loss_fn, is_cuda):
     nErr = 0
     with torch.no_grad():
         for idx, (feature_batch, label_batch) in enumerate(dev_dataloader):
-            if is_cuda:
-                feature_batch = feature_batch.to('cuda')
-                label_batch = label_batch.to('cuda')
+            # only needed if full dataset not loaded to gpu at once
+            # if is_cuda:
+            #     feature_batch = feature_batch.to('cuda')
+            #     label_batch = label_batch.to('cuda')
 
             pred_batch = model(feature_batch)
             loss = loss_fn(pred_batch, label_batch)
@@ -117,8 +124,6 @@ def main():
     is_cuda = False
     if torch.cuda.is_available():
         is_cuda = True
-        if torch.cuda.device_count() > 1:
-            model = torch.nn.DataParallel(model)
         model.to('cuda')
 
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
