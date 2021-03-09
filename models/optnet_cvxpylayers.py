@@ -49,17 +49,24 @@ class OptNetLayer(nn.Module):
 
         flat_board_size = board_size**3
 
+        # random normal initializations:
+        # self.Q_sqrt = nn.Parameter(q_penalty*torch.randn(flat_board_size, flat_board_size, dtype=torch.double))
+        # self.G = nn.Parameter(torch.randn(g_dim, flat_board_size, dtype=torch.double))
+        # self.h = nn.Parameter(torch.randn(g_dim, dtype=torch.double))
+        # self.A = nn.Parameter(torch.randn(a_dim, flat_board_size, dtype=torch.double))
+        # self.b = nn.Parameter(torch.randn(a_dim, dtype=torch.double))
+
         # these definitions are lifted from the example cited above:
         self.Q_sqrt = nn.Parameter(q_penalty*torch.eye(flat_board_size, dtype=torch.double))
-        self.G = nn.Parameter(-torch.eye(flat_board_size, dtype=torch.double))
-        self.h = nn.Parameter(torch.zeros(flat_board_size, dtype=torch.double))
+        self.G = nn.Parameter(-torch.eye(g_dim, flat_board_size, dtype=torch.double))
+        self.h = nn.Parameter(torch.zeros(g_dim, dtype=torch.double))
         self.A = nn.Parameter(torch.rand((a_dim, flat_board_size), dtype=torch.double))
         self.b = nn.Parameter(torch.ones(a_dim, dtype=torch.double))
 
         z = cp.Variable(flat_board_size)
         Q_sqrt = cp.Parameter((flat_board_size, flat_board_size))
-        G = cp.Parameter((flat_board_size, flat_board_size))
-        h = cp.Parameter(flat_board_size)
+        G = cp.Parameter((g_dim, flat_board_size))
+        h = cp.Parameter(g_dim)
         A = cp.Parameter((a_dim, flat_board_size))
         b = cp.Parameter(a_dim)
         q = cp.Parameter(flat_board_size)
