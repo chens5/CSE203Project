@@ -27,9 +27,13 @@ def build_dataloaders(features_path, labels_path, train_batch_size=4, dev_percen
 
     return train_dataset, train_dataloader, dev_dataset, dev_dataloader
 
-def train_epoch(train_dataloader, model, optimizer, loss_fn):
+def train_epoch(train_dataloader, model, optimizer, loss_fn, is_cuda):
     for idx, (feature_batch, label_batch) in enumerate(train_dataloader):
         start_time = time.time()
+        if is_cuda:
+            feature_batch = feature_batch.to('cuda')
+            label_batch = label_batch.to('cuda')
+
         pred_batch = model(feature_batch)
         loss = loss_fn(pred_batch, label_batch)
         end_time = time.time()
@@ -39,18 +43,23 @@ def train_epoch(train_dataloader, model, optimizer, loss_fn):
         loss.backward()
         optimizer.step()
 
-def dev_eval(dev_dataloader, model, loss_fn):
+def dev_eval(dev_dataloader, model, loss_fn, is_cuda):
     dev_loss_total = 0.0
     dev_instances = 0
     start_time = time.time()
     nErr = 0
     with torch.no_grad():
         for idx, (feature_batch, label_batch) in enumerate(dev_dataloader):
+            if is_cuda:
+                feature_batch = feature_batch.to('cuda')
+                label_batch = label_batch.to('cuda')
+
             pred_batch = model(feature_batch)
             loss = loss_fn(pred_batch, label_batch)
             dev_loss_total += loss.item()
             dev_instances += feature_batch.size(0)
-            nErr += computeErr(pred_batch.data)
+            nErr += computeErr(pred_batch.cpu().data)
+
     end_time = time.time()
 
     test_err = nErr/dev_instances
@@ -104,17 +113,25 @@ def main():
     # can replace the following with whatever other model you have (imported above)
     # all of them i think use the same loss function anyway
     model = OptNet(1, board_size, g_dim=board_size**3-board_size, a_dim=40, q_penalty=0.1)
+
+    is_cuda = False
+    if torch.cuda.is_available():
+        is_cuda = True
+        if torch.cuda.device_count() > 1:
+            model = torch.nn.DataParallel(model)
+        model.to('cuda')
+
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn = torch.nn.MSELoss()
 
     for epoch_iter in range(n_epochs):
         print(f'Starting Epoch {epoch_iter+1}/{n_epochs}', flush=True)
         start_time = time.time()
-        train_epoch(train_dataloader, model, optimizer, loss_fn)
+        train_epoch(train_dataloader, model, optimizer, loss_fn, is_cuda)
         end_time = time.time()
         print(f'Finished Epoch {epoch_iter+1} in {end_time-start_time} seconds', flush=True)
 
-        dev_eval(dev_dataloader, model, loss_fn)
+        dev_eval(dev_dataloader, model, loss_fn, is_cuda)
 
 if __name__=='__main__':
   main();
