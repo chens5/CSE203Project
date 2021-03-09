@@ -43,14 +43,47 @@ def dev_eval(dev_dataloader, model, loss_fn):
     dev_loss_total = 0.0
     dev_instances = 0
     start_time = time.time()
+    nErr = 0
     with torch.no_grad():
         for idx, (feature_batch, label_batch) in enumerate(dev_dataloader):
             pred_batch = model(feature_batch)
             loss = loss_fn(pred_batch, label_batch)
             dev_loss_total += loss.item()
             dev_instances += feature_batch.size(0)
+            nErr += computeErr(pred_batch.data)
     end_time = time.time()
-    print(f'Avg. dev loss over {dev_instances} instances: {dev_loss_total / dev_instances}, no_grad_elapsed_seconds: {end_time - start_time}', flush=True)
+
+    test_err = nErr/dev_instances
+    print(f'Avg. dev loss over {dev_instances} instances: {dev_loss_total / dev_instances}, Avg. error: {test_err}, no_grad_elapsed_seconds: {end_time - start_time}', flush=True)
+
+def computeErr(pred):
+    batchSz = pred.size(0)
+    nsq = int(pred.size(1))
+    n = int(np.sqrt(nsq))
+    s = (nsq-1)*nsq//2 # 0 + 1 + ... + n^2-1
+    I = torch.max(pred, 3)[1].squeeze().view(batchSz, nsq, nsq)
+
+    def invalidGroups(x):
+        valid = (x.min(1)[0] == 0)
+        valid *= (x.max(1)[0] == nsq-1)
+        valid *= (x.sum(1) == s)
+        return ~valid
+
+    boardCorrect = torch.ones(batchSz).type_as(pred)
+    for j in range(nsq):
+        # Check the jth row and column.
+        boardCorrect[invalidGroups(I[:,j,:])] = 0
+        boardCorrect[invalidGroups(I[:,:,j])] = 0
+
+        # Check the jth block.
+        row, col = n*(j // n), n*(j % n)
+        M = invalidGroups(I[:,row:row+n,col:col+n].contiguous().view(batchSz,-1))
+        boardCorrect[M] = 0
+
+        if boardCorrect.sum() == 0:
+            return batchSz
+
+    return batchSz-boardCorrect.sum().item()
 
 def main():
     board_size = 4 # data/2 subfolder is 4x4 grids, data/3 subfolder is 9x9 grids
