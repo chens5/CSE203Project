@@ -1,10 +1,11 @@
 import torch
 import time
 import numpy as np
-from models.optnet_cvxpylayers import OptNet
+from models.optnet_cvxpylayers import OptNet, LPLayer
 
 torch.manual_seed(309)
 np.random.seed(484)
+CUDA_DEVICE='cuda:1'
 
 def build_dataloaders(features_path, labels_path, train_batch_size=4, dev_percent=0.1):
     with open(features_path, 'rb') as fp:
@@ -18,8 +19,8 @@ def build_dataloaders(features_path, labels_path, train_batch_size=4, dev_percen
 
     # dataset is small so move all to cuda up front
     if torch.cuda.is_available():
-        train_tensors = [features[:n_train].to('cuda:1'), labels[:n_train].to('cuda:1')]
-        dev_tensors = [features[n_train:].to('cuda:1'), labels[n_train:].to('cuda:1')]
+        train_tensors = [features[:n_train].to(CUDA_DEVICE), labels[:n_train].to(CUDA_DEVICE)]
+        dev_tensors = [features[n_train:].to(CUDA_DEVICE), labels[n_train:].to(CUDA_DEVICE)]
     else:
         train_tensors = [features[:n_train], labels[:n_train]]
         dev_tensors = [features[n_train:], labels[n_train:]]
@@ -104,7 +105,8 @@ def computeErr(pred):
 def main():
     board_size = 4 # data/2 subfolder is 4x4 grids, data/3 subfolder is 9x9 grids
     train_batch_size = 150
-    n_epochs = 30
+    n_epochs = 10
+    learning_rate = 1e-2
 
     if board_size == 9:
         features_path = 'sudoku/data/3/features.pt'
@@ -119,15 +121,15 @@ def main():
 
     # can replace the following with whatever other model you have (imported above)
     # all of them i think use the same loss function anyway
-    #model = OptNet(1, board_size, g_dim=board_size**3-board_size, a_dim=40, q_penalty=0.1)
     model = OptNet(1, board_size, g_dim=board_size**3-board_size, a_dim=40, q_penalty=0.1)
+    model = LPLayer(1, board_size, g_dim=board_size**3-board_size, a_dim=40, q_penalty=0.1)
 
     is_cuda = False
     if torch.cuda.is_available():
         is_cuda = True
-        model.to('cuda:1')
+        model.to(CUDA_DEVICE)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     loss_fn = torch.nn.MSELoss()
 
     for epoch_iter in range(n_epochs):
