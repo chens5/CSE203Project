@@ -122,7 +122,7 @@ class LPLayer(nn.Module):
     final axis is the one-hot encoding of the numerical value in the board,
     in the forward pass though we flatten into batch*(k^3)
     '''
-    def __init__(self, board_size, g_dim, a_dim, q_penalty=1e-3):
+    def __init__(self, board_size, a_dim, q_penalty=1e-3):
         super(OptNetLayer, self).__init__()
 
         flat_board_size = board_size**3
@@ -142,11 +142,6 @@ class LPLayer(nn.Module):
             A@z <= b,
             z >= 0
         ]
-        # objective = cp.Minimize(0.5*cp.sum_squares(Q_sqrt@z) + q.T@z)
-        # constraints = [
-        #     A@z == b,
-        #     G@z <= h
-        # ]
         prob = cp.Problem(objective, constraints)
         self.layer = CvxpyLayer(prob, parameters=[C_embed, q, A, b],
                                 variables =[z])
