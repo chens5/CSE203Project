@@ -123,7 +123,7 @@ class LPLayer(nn.Module):
     in the forward pass though we flatten into batch*(k^3)
     '''
     def __init__(self, board_size, a_dim, q_penalty=1e-3):
-        super(OptNetLayer, self).__init__()
+        super(LPLayer, self).__init__()
 
         flat_board_size = board_size**3
 
