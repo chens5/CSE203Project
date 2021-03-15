@@ -128,27 +128,26 @@ class LPLayer(nn.Module):
         flat_board_size = board_size**3
 
         self.c = nn.Parameter(q_penalty*torch.ones(flat_board_size, dtype=torch.double))
-        self.G = nn.Parameter(-torch.eye(g_dim, flat_board_size, dtype=torch.double))
-        self.h = nn.Parameter(torch.zeros(g_dim, dtype=torch.double))
+        # self.G = nn.Parameter(-torch.eye(g_dim, flat_board_size, dtype=torch.double))
+        # self.h = nn.Parameter(torch.zeros(g_dim, dtype=torch.double))
         self.A = nn.Parameter(torch.rand((a_dim, flat_board_size), dtype=torch.double))
         self.b = nn.Parameter(torch.ones(a_dim, dtype=torch.double))
 
         z = cp.Variable(flat_board_size)
         c = cp.Parameter(flat_board_size)
         q = cp.Parameter(flat_board_size)
-        G = cp.Parameter((g_dim, flat_board_size))
-        h = cp.Parameter(g_dim)
+        # G = cp.Parameter((g_dim, flat_board_size))
+        # h = cp.Parameter(g_dim)
         A = cp.Parameter((a_dim, flat_board_size))
         b = cp.Parameter(a_dim)
 
         objective = cp.Minimize(c.T@z + q.T@z)
         constraints = [
-            A@z == b,
-            G@z <= h,
+            A@z <= b,
             z >= 0
         ]
         prob = cp.Problem(objective, constraints)
-        self.layer = CvxpyLayer(prob, parameters=[c, q, A, b, G, h],
+        self.layer = CvxpyLayer(prob, parameters=[c, q, A, b],
                                 variables =[z])
 
 
@@ -162,7 +161,7 @@ class LPLayer(nn.Module):
                 # batch dim then unsqueeze after processing result
                 z_prev_squeeze = z_prev.squeeze(0)
                 z_flat = -z_prev_squeeze.view(-1)
-                out = self.layer(self.c, z_flat, self.A, self.b, self.G, self.h, solver_args={'verbose': verbose})
+                out = self.layer(self.c, z_flat, self.A, self.b, solver_args={'verbose': verbose})
                 return out[0].view_as(z_prev_squeeze).unsqueeze(0)
 
             # not clear yet why negative here, this is from the example code
@@ -171,14 +170,12 @@ class LPLayer(nn.Module):
                               z_flat,
                               self.A.repeat(nbatch, 1, 1),
                               self.b.repeat(nbatch, 1),
-                              self.G.repeat(nbatch, 1, 1),
-                              self.h.repeat(nbatch, 1),
                               solver_args={'verbose': verbose})
             return out[0].view_as(z_prev)
         elif z_prev.ndim == 3:
             # z_prev is not batched
             # not clear yet why negative here, this is from the example code
             z_flat = -z_prev.view(-1)
-            return self.layer(self.c, z_flat, self.A, self.b, self.G, self.h, solver_args={'verbose': verbose})[0].view_as(z_prev)
+            return self.layer(self.c, z_flat, self.A, self.b, solver_args={'verbose': verbose})[0].view_as(z_prev)
         else:
             raise Exception('invalid input dimension')
