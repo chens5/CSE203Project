@@ -122,7 +122,7 @@ def main():
     # can replace the following with whatever other model you have (imported above)
     # all of them i think use the same loss function anyway
     #model = OptNet(1, board_size, g_dim=board_size**3-board_size, a_dim=40, q_penalty=0.1)
-    model = LPLayer(1, board_size, a_dim=40, q_penalty=0.1)
+    model = LPLayer(board_size, a_dim=40, q_penalty=0.1)
 
     is_cuda = False
     if torch.cuda.is_available():

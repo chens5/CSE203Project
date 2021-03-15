@@ -127,17 +127,18 @@ class LPLayer(nn.Module):
 
         flat_board_size = board_size**3
 
-        self.C_embed = nn.Parameter(q_penalty*torch.eye(flat_board_size, dtype=torch.double))
+        #self.C_embed = nn.Parameter(q_penalty*torch.rand((flat_board_size, flat_board_size), dtype=torch.double))
+        self.C_embed = nn.Parameter(q_penalty*torch.ones(flat_board_size, dtype=torch.double))
         self.A = nn.Parameter(torch.rand((a_dim, flat_board_size), dtype=torch.double))
         self.b = nn.Parameter(torch.ones(a_dim, dtype=torch.double))
 
         z = cp.Variable(flat_board_size)
-        C_embed = cp.Parameter((flat_board_size, flat_board_size))
+        C_embed = cp.Parameter(flat_board_size)
         q = cp.Parameter(flat_board_size)
         A = cp.Parameter((a_dim, flat_board_size))
         b = cp.Parameter(a_dim)
 
-        objective = cp.Minimize((C_embed@q)@z)
+        objective = cp.Minimize(C_embed.T@z + q.T@z)
         constraints = [
             A@z <= b,
             z >= 0
@@ -162,7 +163,7 @@ class LPLayer(nn.Module):
 
             # not clear yet why negative here, this is from the example code
             z_flat = -z_prev.view(nbatch, -1)
-            out = self.layer(self.C_embed.repeat(nbatch, 1, 1),
+            out = self.layer(self.C_embed.repeat(nbatch, 1),
                               z_flat,
                               self.A.repeat(nbatch, 1, 1),
                               self.b.repeat(nbatch, 1),
