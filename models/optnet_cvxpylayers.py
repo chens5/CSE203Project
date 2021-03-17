@@ -131,6 +131,7 @@ class LPLayer(nn.Module):
         # self.G = nn.Parameter(-torch.eye(g_dim, flat_board_size, dtype=torch.double))
         # self.h = nn.Parameter(torch.zeros(g_dim, dtype=torch.double))
         self.A = nn.Parameter(torch.rand((a_dim, flat_board_size), dtype=torch.double))
+        #self.A = nn.Parameter(-torch.eye(a_dim, flat_board_size, dtype=torch.double))
         self.b = nn.Parameter(torch.ones(a_dim, dtype=torch.double))
 
         z = cp.Variable(flat_board_size)
